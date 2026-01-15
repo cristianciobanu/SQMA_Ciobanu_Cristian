@@ -1,0 +1,112 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                    python3 -m pip install --upgrade pip
+                    python3 -m pip install -r requirements.txt
+                '''
+            }
+        }
+        
+        stage('Run All Tests') {
+            parallel {
+                stage('Login Tests') {
+                    steps {
+                        sh '''
+                            python3 -m pytest test_login.py -v --html=login_report.html --self-contained-html
+                        '''
+                    }
+                }
+                stage('Calculator Tests') {
+                    steps {
+                        sh '''
+                            python3 -m pytest test_calculator.py -v --html=calculator_report.html --self-contained-html
+                        '''
+                    }
+                }
+                stage('API Tests') {
+                    steps {
+                        sh '''
+                            python3 -m pytest test_api.py -v --html=api_report.html --self-contained-html
+                        '''
+                    }
+                }
+                stage('Database Tests') {
+                    steps {
+                        sh '''
+                            python3 -m pytest test_database.py -v --html=database_report.html --self-contained-html
+                        '''
+                    }
+                }
+            }
+        }
+        
+        stage('Generate Combined Report') {
+            steps {
+                sh '''
+                    python3 -m pytest test_login.py test_calculator.py test_api.py test_database.py -v --html=report.html --self-contained-html
+                '''
+            }
+        }
+    }
+    
+    post {
+        always {
+            publishHTML([
+                reportDir: '.',
+                reportFiles: 'report.html',
+                reportName: 'Combined Test Report',
+                allowMissing: false,
+                alwaysLinkToLastBuild: true,
+                keepAll: true
+            ])
+            publishHTML([
+                reportDir: '.',
+                reportFiles: 'login_report.html',
+                reportName: 'Login Tests Report',
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true
+            ])
+            publishHTML([
+                reportDir: '.',
+                reportFiles: 'calculator_report.html',
+                reportName: 'Calculator Tests Report',
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true
+            ])
+            publishHTML([
+                reportDir: '.',
+                reportFiles: 'api_report.html',
+                reportName: 'API Tests Report',
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true
+            ])
+            publishHTML([
+                reportDir: '.',
+                reportFiles: 'database_report.html',
+                reportName: 'Database Tests Report',
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true
+            ])
+        }
+        success {
+            echo '✅ All tests passed successfully!'
+        }
+        failure {
+            echo '❌ Some tests failed!'
+        }
+    }
+}
