@@ -42,7 +42,8 @@ pipeline {
                 reportFiles: 'report.html',
                 reportName: 'Test Report',
                 allowMissing: false,
-                alwaysLinkToLastBuild: true
+                alwaysLinkToLastBuild: true,
+                keepAll: true
             ])
         }
         success {
