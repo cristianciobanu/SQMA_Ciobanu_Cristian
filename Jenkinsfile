@@ -28,7 +28,13 @@ pipeline {
         stage('Run Selected Tests') {
             steps {
                 sh '''
-                    python3 -m pytest ${TEST_SUITE}.py -v --html=report.html --self-contained-html
+                    if [ "${TEST_SUITE}" = "test_login" ]; then
+                        python3 -m pytest test_login.py -v --html=report.html --self-contained-html
+                    elif [ "${TEST_SUITE}" = "test_calculator" ]; then
+                        python3 -m pytest test_calculator.py -v --html=report.html --self-contained-html
+                    else
+                        python3 -m pytest -v --html=report.html --self-contained-html
+                    fi
                 '''
             }
         }
@@ -36,7 +42,6 @@ pipeline {
     
     post {
         always {
-            junit 'test-results.xml' || true
             publishHTML([
                 reportDir: '.',
                 reportFiles: 'report.html',
